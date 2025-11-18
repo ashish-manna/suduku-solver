@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { toast } from "react-toastify";
 
 type Board = string[][];
 type SolvedCells = boolean[][];
@@ -81,9 +82,7 @@ export default function SudokuSolver() {
   const handleSolve = (): void => {
     const newBoard = board.map((row) => [...row]);
     if (!validateInitialBoard(newBoard)) {
-      alert(
-        "Invalid board! Please check your input. Make sure no numbers are duplicated in rows, columns, or 3x3 boxes."
-      );
+      toast.error("Invalid board! Please check your input.");
       return;
     }
     const newSolvedCells: SolvedCells = Array(9)
@@ -108,8 +107,9 @@ export default function SudokuSolver() {
       }
       setBoard(newBoard);
       setSolvedCells(newSolvedCells);
+      toast.success("Here is your solved board!!");
     } else {
-      alert("No solution exists for this board!");
+      toast.error("No solution exists for this board!");
     }
   };
 
@@ -139,17 +139,17 @@ export default function SudokuSolver() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
-      <div className="bg-black rounded-2xl shadow-2xl p-8 max-w-2xl w-full">
-        <h1 className="text-4xl font-bold text-center mb-2 bg-linear-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+    <div className="min-h-screen bg-linear-to-br from-black via-[#d4b02e] to-black flex items-center justify-center p-4">
+      <div className="bg-black rounded-2xl shadow-2xl p-4 lg:p-8 max-w-2xl w-full">
+        <h1 className="text-4xl font-bold text-center mb-2 bg-linear-to-r from-[#d4b02e] to-[#f3c911] bg-clip-text text-transparent">
           Sudoku Solver
         </h1>
-        <p className="text-center text-gray-600 mb-6">
+        <p className="text-center text-sm lg:text-lg text-[#EB8317] opacity-80 mb-6">
           Enter your puzzle and watch the magic happen!
         </p>
 
-        <div className="bg-black flex justify-center p-4 rounded-xl mb-6">
-          <div className="inline-grid grid-cols-9 gap-0 bg-black p-1 rounded-lg">
+        <div className="bg-black flex justify-center lg:p-4 rounded-xl mb-6">
+          <div className="inline-grid grid-cols-9 gap-0 bg-black p-1 border-4 rounded-lg">
             {board.map((row, rowIndex) =>
               row.map((cell, colIndex) => {
                 const isThickRight = (colIndex + 1) % 3 === 0 && colIndex !== 8;
@@ -165,13 +165,13 @@ export default function SudokuSolver() {
                     onChange={(e) =>
                       handleInputChange(rowIndex, colIndex, e.target.value)
                     }
-                    className={`w-12 h-12 text-center text-xl font-semibold border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:z-10
-                      ${isThickRight ? "border-r-4 border-r-gray-800" : ""}
-                      ${isThickBottom ? "border-b-4 border-b-gray-800" : ""}
+                    className={`lg:w-12 lg:h-12 cursor-pointer text-center text-xl font-semibold border border-black focus:outline-none focus:ring-2 focus:ring-black focus:z-10
+                      ${isThickRight ? "border-r-4 border-r-black" : ""}
+                      ${isThickBottom ? "border-b-4 border-b-black" : ""}
                       ${
                         solvedCells[rowIndex][colIndex]
-                          ? "bg-green-50 text-green-600"
-                          : "bg-white text-gray-800"
+                          ? "bg-white text-black"
+                          : "bg-[#EB8317] text-black"
                       }
                       ${cell === "" ? "" : "font-bold"}
                     `}
@@ -185,13 +185,13 @@ export default function SudokuSolver() {
         <div className="flex gap-4 justify-center">
           <button
             onClick={handleSolve}
-            className="bg-linear-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold px-8 py-3 rounded-lg shadow-lg transform transition hover:scale-105 active:scale-95"
+            className="cursor-pointer text-sm lg:text-lg bg-linear-to-r from-[#d4b02e] to-[#EB8317] hover:from-purple-700 hover:to-blue-700 text-black font-semibold px-4 py-2 lg:px-8 lg:py-3 rounded-lg shadow-lg transform transition hover:scale-105 active:scale-95"
           >
             Solve Sudoku
           </button>
           <button
             onClick={handleClear}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-8 py-3 rounded-lg shadow-lg transform transition hover:scale-105 active:scale-95"
+            className="bg-gray-200 cursor-pointer hover:bg-gray-300 text-gray-800 font-semibold px-4 py-2 lg:px-8 lg:py-3 rounded-lg shadow-lg transform transition hover:scale-105 active:scale-95"
           >
             Clear Board
           </button>
