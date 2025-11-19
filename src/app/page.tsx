@@ -5,7 +5,10 @@ import { toast } from "react-toastify";
 type Board = string[][];
 type SolvedCells = boolean[][];
 
+const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
 export default function SudokuSolver() {
+  const [flag, setFlag] = useState(false);
   const [board, setBoard] = useState<Board>(
     Array(9)
       .fill(null)
@@ -17,6 +20,8 @@ export default function SudokuSolver() {
       .map(() => Array(9).fill(false))
   );
 
+  const [isSolving, setIsSolving] = useState(false);
+
   const isValid = (
     board: Board,
     row: number,
@@ -26,13 +31,13 @@ export default function SudokuSolver() {
     for (let x = 0; x < 9; x++) {
       if (board[row][x] === num) return false;
     }
-
     for (let x = 0; x < 9; x++) {
       if (board[x][col] === num) return false;
     }
 
     const startRow = Math.floor(row / 3) * 3;
     const startCol = Math.floor(col / 3) * 3;
+
     for (let i = 0; i < 3; i++) {
       for (let j = 0; j < 3; j++) {
         if (board[startRow + i][startCol + j] === num) return false;
@@ -44,8 +49,8 @@ export default function SudokuSolver() {
   const validateInitialBoard = (board: Board): boolean => {
     for (let row = 0; row < 9; row++) {
       for (let col = 0; col < 9; col++) {
-        if (board[row][col] !== "") {
-          const num = board[row][col];
+        const num = board[row][col];
+        if (num !== "") {
           board[row][col] = "";
           if (!isValid(board, row, col, num)) {
             board[row][col] = num;
@@ -58,74 +63,90 @@ export default function SudokuSolver() {
     return true;
   };
 
-  const solveSudoku = (board: Board): boolean => {
-    for (let row = 0; row < 9; row++) {
-      for (let col = 0; col < 9; col++) {
-        if (board[row][col] === "") {
-          for (let num = 1; num <= 9; num++) {
-            const numStr = num.toString();
-            if (isValid(board, row, col, numStr)) {
-              board[row][col] = numStr;
-              if (solveSudoku(board)) {
-                return true;
-              }
-              board[row][col] = "";
-            }
-          }
-          return false;
+  const solveSudokuVisual = async (
+    board: Board,
+    row = 0,
+    col = 0
+  ): Promise<boolean> => {
+    if (row === 9) return true;
+
+    const nextRow = col === 8 ? row + 1 : row;
+    const nextCol = col === 8 ? 0 : col + 1;
+
+    if (board[row][col] !== "") {
+      return solveSudokuVisual(board, nextRow, nextCol);
+    }
+
+    for (let num = 1; num <= 9; num++) {
+      const numStr = num.toString();
+
+      if (isValid(board, row, col, numStr)) {
+        board[row][col] = numStr;
+        setBoard(board.map((r) => [...r]));
+        await delay(20);
+
+        if (await solveSudokuVisual(board, nextRow, nextCol)) {
+          return true;
         }
+
+        board[row][col] = "";
+        setBoard(board.map((r) => [...r]));
+        await delay(20);
       }
     }
-    return true;
+
+    return false;
   };
 
-  const handleSolve = (): void => {
-    const newBoard = board.map((row) => [...row]);
-    if (!validateInitialBoard(newBoard)) {
-      toast.error("Invalid board! Please check your input.");
+  const handleSolve = async () => {
+    if (isSolving) {
+      toast.error(`wait until it's done...`);
       return;
     }
-    const newSolvedCells: SolvedCells = Array(9)
-      .fill(null)
-      .map(() => Array(9).fill(false));
+    if (flag) {
+      toast.error(`already solved...`);
+      return;
+    }
+    const newBoard = board.map((r) => [...r]);
 
-    for (let i = 0; i < 9; i++) {
-      for (let j = 0; j < 9; j++) {
-        if (newBoard[i][j] !== "") {
-          newSolvedCells[i][j] = false;
-        }
-      }
+    if (!validateInitialBoard(newBoard)) {
+      toast.error("Invalid board! Fix your input.");
+      return;
     }
 
-    if (solveSudoku(newBoard)) {
-      for (let i = 0; i < 9; i++) {
-        for (let j = 0; j < 9; j++) {
-          if (board[i][j] === "" && newBoard[i][j] !== "") {
-            newSolvedCells[i][j] = true;
-          }
-        }
-      }
-      setBoard(newBoard);
-      setSolvedCells(newSolvedCells);
-      toast.success("Here is your solved board!!");
+    // toast.info("Solving... Visualization running.");
+    setIsSolving(true);
+
+    const solved = await solveSudokuVisual(newBoard);
+
+    if (solved) {
+      setFlag(true);
+      const finalSolvedCells = board.map((row, i) =>
+        row.map((cell, j) =>
+          board[i][j] === "" && newBoard[i][j] !== "" ? true : false
+        )
+      );
+      setSolvedCells(finalSolvedCells);
+      toast.success("Sudoku Solved!");
     } else {
-      toast.error("No solution exists for this board!");
+      toast.error("No solution exists!");
     }
+
+    setIsSolving(false);
   };
 
   const handleInputChange = (row: number, col: number, value: string): void => {
+    if (isSolving) return;
+
     if (value === "" || (value >= "1" && value <= "9")) {
       const newBoard = board.map((r) => [...r]);
       newBoard[row][col] = value;
       setBoard(newBoard);
-
-      const newSolvedCells = solvedCells.map((r) => [...r]);
-      newSolvedCells[row][col] = false;
-      setSolvedCells(newSolvedCells);
     }
   };
 
-  const handleClear = (): void => {
+  const handleClear = () => {
+    if (isSolving) return;
     setBoard(
       Array(9)
         .fill(null)
@@ -136,6 +157,7 @@ export default function SudokuSolver() {
         .fill(null)
         .map(() => Array(9).fill(false))
     );
+    setFlag(false);
   };
 
   return (
@@ -170,8 +192,8 @@ export default function SudokuSolver() {
                       ${isThickBottom ? "border-b-4 border-b-black" : ""}
                       ${
                         solvedCells[rowIndex][colIndex]
-                          ? "bg-white text-black"
-                          : "bg-[#EB8317] text-black"
+                          ? "bg-[#d4b02e] text-black"
+                          : "bg-white text-black"
                       }
                       ${cell === "" ? "" : "font-bold"}
                     `}
@@ -185,7 +207,7 @@ export default function SudokuSolver() {
         <div className="flex gap-4 justify-center">
           <button
             onClick={handleSolve}
-            className="cursor-pointer text-sm lg:text-lg bg-linear-to-r from-[#d4b02e] to-[#EB8317] hover:from-purple-700 hover:to-blue-700 text-black font-semibold px-4 py-2 lg:px-8 lg:py-3 rounded-lg shadow-lg transform transition hover:scale-105 active:scale-95"
+            className="cursor-pointer text-sm lg:text-lg bg-linear-to-r from-[#d4b02e] to-[#EB8317] hover:text-white text-black font-semibold px-4 py-2 lg:px-8 lg:py-3 rounded-lg shadow-lg transform transition hover:scale-105 active:scale-95"
           >
             Solve Sudoku
           </button>
