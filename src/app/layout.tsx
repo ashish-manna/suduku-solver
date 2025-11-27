@@ -18,7 +18,9 @@ export const metadata: Metadata = {
   description:
     "Simple and efficient Sudoku solver implemented with the backtracking algorithm. Includes a step-by-step solving process and optional real-time visualization.",
   icons: {
-    icon: "/suduku.ico",
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
+    apple: "/favicon.png",
   },
 };
 
